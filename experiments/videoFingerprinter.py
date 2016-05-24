@@ -3,6 +3,7 @@
 import sys
 import cv2
 import numpy as np
+import videoUtils
 
 startFrame = 100
 numFrames = 100
@@ -22,21 +23,13 @@ def main(argv):
 		print('specify a videofile')
 		return
 
-	cap = cv2.VideoCapture(argv[1])
-
-	for i in range(startFrame):
-		cap.read()
-	
-	for i in range(numFrames):	
-		ret, frame = cap.read()
-		if not ret: break
+	for frame in videoUtils.getFrames(argv[1], startFrame, numFrames):
 		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		print(fingerprint(gray))
 		if writeToFolder:
 			filename = 'frame' + str(startFrame + i) + '.png'
 			cv2.imwrite(filename, gray)
 
-	cap.release()
 
 if __name__ == '__main__':
 	main(sys.argv)
