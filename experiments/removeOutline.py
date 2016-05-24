@@ -4,7 +4,7 @@ import numpy as np
 
 levelCache = []
 
-def removeOutline(frames):
+def getActualBounds(frames):
 	numFrames = len(frames)
 	diffMat = np.zeros(frames[0].shape)
 	half = numFrames // 2

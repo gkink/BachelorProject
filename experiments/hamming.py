@@ -26,7 +26,7 @@ def compareFiles(f1,f2):
 			c1 = contents1[i]
 			c2 = contents2[j]
 			distance = hammingDistance(c1,c2)
-			if distance <= 10:
+			if distance <= 11:
 				print(c1, '-', i)
 				print(c2, '-', j)
 				print(distance)
