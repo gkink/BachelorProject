@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+project( dct_hash )
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable( dct_hash dct_hash.cpp )
+target_link_libraries( dct_hash ${OpenCV_LIBS} )
