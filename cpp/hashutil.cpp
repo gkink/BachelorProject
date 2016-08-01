@@ -48,7 +48,7 @@ hash64_t dct_hash(Mat &image) {
     return (hash64_t) { hash_hi, hash_lo };
 }
 
-hash64_t aHash(Mat &image) {
+hash64_t avg_hash(Mat &image) {
     Mat resized_image;
 
     resize(image, resized_image, Size(8,8));
@@ -167,7 +167,7 @@ void hash_file(char *video_file, ofstream &out, bool crop_f=false) {
         if (frame.empty()) break;
         cvtColor(frame, frame, COLOR_BGR2GRAY);
         if (crop_f) crop(frame);
-        hash64_t hash = dct_hash(frame);
+        hash64_t hash = avg_hash(frame);
         out.write((const char *)(&hash), sizeof(hash64_t));
     }
     cap.release();
@@ -185,10 +185,10 @@ int hamming_distance(hash64_t a, hash64_t b) {
     return __builtin_popcount(a.lo ^ b.lo) + __builtin_popcount(a.hi ^ b.hi); 
 }
 
-void match(vector<hash64_t> a, vector<hash64_t> b) {
+void match(vector<hash64_t> a, vector<hash64_t> b, int threshold) {
     for (size_t i = 0; i < a.size(); ++i) {
         size_t best_match_idx;
-        int distance = 7; 
+        int distance = threshold; 
         for (size_t j = 0; j < b.size(); ++j) {
             int curr_distance = hamming_distance(a[i],b[j]);
             if (curr_distance < distance) {
@@ -196,7 +196,7 @@ void match(vector<hash64_t> a, vector<hash64_t> b) {
                 distance = curr_distance;
             }
         }
-        if (distance < 7) {
+        if (distance < threshold) {
             cout << i << " matches " << best_match_idx << endl;
             cout << "distance: " << distance << endl;
         } else {
@@ -212,11 +212,12 @@ int main(int argc, char **argv) {
 }
 
 // examples 
+
 // int main(int argc, char **argv) {
 //     char *video_file = argv[1];
 //     ofstream out (argv[2], ios::binary);
 
-//     hash_file(video_file, out, false);
+//     hash_file(video_file, out, true);
 
 //     out.close();
 //     return 0;
@@ -231,7 +232,7 @@ int main(int argc, char **argv) {
 //     read_hashes(f1, needles);
 //     read_hashes(f2, haystack);
 
-//     match(needles, haystack);
+//     match(needles, haystack, 7);
 
 //     return 0;
 // }
