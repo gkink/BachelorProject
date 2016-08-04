@@ -1,19 +1,26 @@
 #include <fstream>
 #include <iterator>
 
+#include <string.h>
+#include <stdlib.h>
+
 #include <algorithm>
 #include <opencv2/opencv.hpp>
 
-typedef struct { int hi; int lo; } hash64_t;
+typedef unsigned long long ull;
 
 using namespace cv;
 using namespace std;
 
+const int ALGO_PHASH = 0;
+const int ALGO_AHASH = 1;
+
 const int blur_radius = 31;
 const int bin_thresh = 41;
 
-hash64_t dct_hash(Mat &image) {
+ull dct_hash(Mat &image) {
     Mat resized_image, dct_image;
+    ull hash = 0;
 
     resize(image, resized_image, Size(32,32));
     resized_image.convertTo(resized_image, CV_32F);
@@ -30,56 +37,14 @@ hash64_t dct_hash(Mat &image) {
     sum -= dct_image.at<float>(Point(0,0));
 
     float average = sum / 63.f;
-    int hash_hi = 0;
-    for (int i = 0; i < 4; ++i) {
-        row = dct_image.ptr<float>(i);
-        for (int j = 0; j < 8; ++j) {
-            hash_hi = (hash_hi << 1) | (row[j] > average);
-        }
-    }    
-    int hash_lo = 0;
-    for (int i = 4; i < 8; ++i) {
-        row = dct_image.ptr<float>(i);
-        for (int j = 0; j < 8; ++j) {
-            hash_lo = (hash_lo << 1) | (row[j] > average);
-        }
-    }
-
-    return (hash64_t) { hash_hi, hash_lo };
-}
-
-hash64_t avg_hash(Mat &image) {
-    Mat resized_image;
-
-    resize(image, resized_image, Size(8,8));
-    resized_image.convertTo(resized_image, CV_32F);
-
-    float sum = 0.f;
-    float* row;
     for (int i = 0; i < 8; ++i) {
-        row = resized_image.ptr<float>(i);
+        row = dct_image.ptr<float>(i);
         for (int j = 0; j < 8; ++j) {
-            sum += row[j];
-        }
-    }
-
-    float average = sum / 64.f;
-    int hash_hi = 0;
-    for (int i = 0; i < 4; ++i) {
-        row = resized_image.ptr<float>(i);
-        for (int j = 0; j < 8; ++j) {
-            hash_hi = (hash_hi << 1) | (row[j] > average);
+            hash = (hash << 1) | (row[j] > average);
         }
     }    
-    int hash_lo = 0;
-    for (int i = 4; i < 8; ++i) {
-        row = resized_image.ptr<float>(i);
-        for (int j = 0; j < 8; ++j) {
-            hash_lo = (hash_lo << 1) | (row[j] > average);
-        }
-    }
 
-    return (hash64_t) { hash_hi, hash_lo };
+    return hash;
 }
 
 bool point_cmp_by_x(Point pt1, Point pt2) {
@@ -167,25 +132,25 @@ void hash_file(char *video_file, ofstream &out, bool crop_f=false) {
         if (frame.empty()) break;
         cvtColor(frame, frame, COLOR_BGR2GRAY);
         if (crop_f) crop(frame);
-        hash64_t hash = avg_hash(frame);
-        out.write((const char *)(&hash), sizeof(hash64_t));
+        ull hash = dct_hash(frame);
+        out.write((const char *)(&hash), sizeof(ull));
     }
     cap.release();
 }
 
-void read_hashes(ifstream &in, vector<hash64_t> &vec) {
-    hash64_t buffer;
-    while (in.read((char *)(&buffer), sizeof(hash64_t))) {
-        hash64_t h = (hash64_t) buffer;
+void read_hashes(ifstream &in, vector<ull> &vec) {
+    ull buffer;
+    while (in.read((char *)(&buffer), sizeof(ull))) {
+        ull h = (ull) buffer;
         vec.push_back(h);
     }
 }
 
-int hamming_distance(hash64_t a, hash64_t b) {
-    return __builtin_popcount(a.lo ^ b.lo) + __builtin_popcount(a.hi ^ b.hi); 
+int hamming_distance(ull a, ull b) {
+    return __builtin_popcountll(a ^ b); 
 }
 
-void match(vector<hash64_t> a, vector<hash64_t> b, int threshold) {
+void match(vector<ull> a, vector<ull> b, int threshold) {
     for (size_t i = 0; i < a.size(); ++i) {
         size_t best_match_idx;
         int distance = threshold; 
@@ -199,40 +164,30 @@ void match(vector<hash64_t> a, vector<hash64_t> b, int threshold) {
         if (distance < threshold) {
             cout << i << " matches " << best_match_idx << endl;
             cout << "distance: " << distance << endl;
-        } else {
-            cout << "no match for " << i << endl;
         }
     }
 }
-
-
-
-int main(int argc, char **argv) {
-    return 0;
-}
-
-// examples 
 
 // int main(int argc, char **argv) {
 //     char *video_file = argv[1];
 //     ofstream out (argv[2], ios::binary);
 
-//     hash_file(video_file, out, true);
+//     hash_file(video_file, out, false);
 
 //     out.close();
 //     return 0;
 // }
 
-// int main(int argc, char **argv) {
-//     ifstream f1 (argv[1], ios::binary);
-//     ifstream f2 (argv[2], ios::binary);
-//     vector<hash64_t> needles;
-//     vector<hash64_t> haystack;
+int main(int argc, char **argv) {
+    ifstream f1 (argv[1], ios::binary);
+    ifstream f2 (argv[2], ios::binary);
+    vector<ull> needles;
+    vector<ull> haystack;
     
-//     read_hashes(f1, needles);
-//     read_hashes(f2, haystack);
+    read_hashes(f1, needles);
+    read_hashes(f2, haystack);
 
-//     match(needles, haystack, 7);
+    match(needles, haystack, 11);
 
-//     return 0;
-// }
+    return 0;
+}
