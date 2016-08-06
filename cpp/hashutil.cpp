@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h> 
 
 #include <algorithm>
 #include <opencv2/opencv.hpp>
@@ -58,7 +59,15 @@ void crop(Mat &image) {
     int width = image.cols;
 
     blur(image_copy, image_copy, Size(blur_radius,blur_radius));
+
+    imshow("show", image_copy);
+    waitKey(0);
+
     threshold(image_copy, image_copy, bin_thresh, 255, THRESH_BINARY);
+
+    imshow("show", image_copy);
+    waitKey(0);
+
     findContours(image_copy, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
 
     int i = 0;
@@ -168,26 +177,31 @@ void match(vector<ull> a, vector<ull> b, int threshold) {
     }
 }
 
+int main(int argc, char **argv) {
+    char *video_file = argv[1];
+    ofstream out (argv[2], ios::binary);
+
+    hash_file(video_file, out, false);
+
+    out.close();
+    return 0;
+}
+
 // int main(int argc, char **argv) {
-//     char *video_file = argv[1];
-//     ofstream out (argv[2], ios::binary);
+//     ifstream f1 (argv[1], ios::binary);
+//     ifstream f2 (argv[2], ios::binary);
+//     vector<ull> needles;
+//     vector<ull> haystack;
+    
+//     read_hashes(f1, needles);
+//     read_hashes(f2, haystack);
 
-//     hash_file(video_file, out, false);
+//     match(needles, haystack, 11);
 
-//     out.close();
 //     return 0;
 // }
 
-int main(int argc, char **argv) {
-    ifstream f1 (argv[1], ios::binary);
-    ifstream f2 (argv[2], ios::binary);
-    vector<ull> needles;
-    vector<ull> haystack;
-    
-    read_hashes(f1, needles);
-    read_hashes(f2, haystack);
-
-    match(needles, haystack, 11);
-
-    return 0;
-}
+// int main(int argc, char **argv) {
+//     Mat img = imread(argv[1], 0);
+//     crop(img);
+// }
