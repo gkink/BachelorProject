@@ -57,17 +57,28 @@ def search_hashes(hashes):
 	max_coins = max(coins)
 	max_coins_idx = coins.index(max_coins)
 	second_max_coins = max(coins[:max_coins_idx] + coins[max_coins_idx+1:])
-	if max_coins >= barrier and max_coins >= 1.2 * second_max_coins:
-		print(2)
-		print("coins", coins)
-		for f in distances:
-			print(f)
-		print("spread", spread)
-		for f in frame_nums: 
-			print(f)
-		print("max coins", max_coins)
-		return film_id_list[coins.index(max(coins))]
-	print(3)
+	if max_coins >= 1.2 * second_max_coins:
+		if max_coins >= barrier:
+			print(2)
+			print("coins", coins)
+			for f in distances:
+				print(f)
+			print("spread", spread)
+			for f in frame_nums: 
+				print(f)
+			print("max coins", max_coins)
+			return film_id_list[coins.index(max(coins))]
+		elif max_coins >= barrier * 0.75 and spread[max_coins_idx] < widespread / 2:
+			print(3)
+			print("coins", coins)
+			for f in distances:
+				print(f)
+			print("spread", spread)
+			for f in frame_nums: 
+				print(f)
+			print("max coins", max_coins)
+			return film_id_list[coins.index(max(coins))]
+	print(4)
 	print("coins", coins)
 	for f in distances:
 		print(f)
